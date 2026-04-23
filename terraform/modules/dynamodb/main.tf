@@ -8,6 +8,10 @@ resource "aws_dynamodb_table" "app_table" {
     type = "S"
   }
 
+  server_side_encryption {
+  enabled = true
+}
+
   tags = {
     Name        = "ai-serverless-app-table"
     Environment = "dev"
