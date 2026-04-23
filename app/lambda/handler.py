@@ -2,12 +2,14 @@ import json
 import uuid
 import boto3
 import logging
+import os
+import traceback
 from datetime import datetime
 
 dynamodb = boto3.resource("dynamodb")
 bedrock = boto3.client("bedrock-runtime")
 
-table_name = "ai-serverless-app-table"
+table_name = os.environ["TABLE_NAME"]
 table = dynamodb.Table(table_name)
 
 logger = logging.getLogger()
@@ -16,7 +18,12 @@ logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     try:
-        body = json.loads(event.get("body", "{}"))
+        body = event.get("body")
+
+        if isinstance(body, str):
+            body = json.loads(body)
+        elif body is None:
+            body = {}
 
         # --- Input Validation ---
         if "input" not in body:
@@ -46,7 +53,7 @@ def lambda_handler(event, context):
             }
 
         request_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.utcnow().isoformat() + "Z"
 
         logger.info(f"Processing request_id={request_id}")
 
@@ -94,10 +101,11 @@ def lambda_handler(event, context):
 
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
+        logger.error(traceback.format_exc())
 
         return {
             "statusCode": 500,
             "body": json.dumps({
-                "error": "Internal server error"
+                "error": str(e)
             })
         }

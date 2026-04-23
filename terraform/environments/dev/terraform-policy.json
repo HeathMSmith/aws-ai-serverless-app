@@ -26,6 +26,10 @@
         "iam:GetPolicy",
         "iam:ListPolicies",
         "iam:GetPolicyVersion",
+        "iam:CreatePolicy",
+        "iam:DeletePolicy",
+        "iam:ListInstanceProfilesForRole",
+        "iam:ListPolicyVersions",
 
         "kms:CreateKey",
         "kms:DescribeKey",
@@ -39,6 +43,10 @@
         "kms:EnableKeyRotation",
         "kms:GetKeyRotationStatus",
         "kms:ListResourceTags",
+        "kms:ListResourceTags",
+        "kms:CreateGrant",
+        "kms:ListGrants",
+        "kms:RevokeGrant",
 
         "bedrock:InvokeModel"
       ],

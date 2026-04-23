@@ -3,7 +3,11 @@ name: Terraform Destroy
 on:
   workflow_dispatch:
     inputs:
-      confirm_destroy:
+      environment:
+        description: "Environment to destroy (dev or prod)"
+        required: true
+        default: "dev"
+      confirm:
         description: "Type 'destroy' to confirm"
         required: true
 
@@ -11,6 +15,7 @@ jobs:
   destroy:
     if: github.event.inputs.confirm_destroy == 'destroy'
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
 
     permissions:
       id-token: write
@@ -18,11 +23,18 @@ jobs:
 
     defaults:
       run:
-        working-directory: terraform/environments/dev
+        working-directory: terraform/environments/${{ github.event.inputs.environment }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+    
+      - name: Validate destroy confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "destroy" ]; then
+            echo "Destroy not confirmed. Exiting."
+            exit 1
+          fi
 
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4

@@ -1,9 +1,9 @@
 resource "aws_s3_bucket" "app_bucket" {
-  bucket = "hms-ai-serverless-app-data"
+  bucket = "hms-ai-serverless-app-data-${var.environment}"
 
   tags = {
     Name        = "ai-serverless-app-data"
-    Environment = "dev"
+    Environment = var.environment
   }
 }
 

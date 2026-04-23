@@ -1,5 +1,5 @@
 resource "aws_iam_role" "lambda_role" {
-  name = "lambda-ai-serverless-role"
+  name = "lambda-ai-serverless-${var.environment}-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -38,7 +38,7 @@ data "aws_iam_policy_document" "lambda_policy" {
 }
 
 resource "aws_iam_policy" "lambda_dynamodb_policy" {
-  name   = "lambda-dynamodb-write-policy"
+  name   = "lambda-dynamodb-write-policy-${var.environment}"
   policy = data.aws_iam_policy_document.lambda_policy.json
 }
 
@@ -53,7 +53,7 @@ resource "aws_iam_role_policy_attachment" "lambda_dynamodb_attach" {
 }
 
 resource "aws_lambda_function" "app_lambda" {
-  function_name = "ai-serverless-app-lambda"
+  function_name = "ai-serverless-app-${var.environment}-lambda"
   role          = aws_iam_role.lambda_role.arn
   handler       = "handler.lambda_handler"
   runtime       = "python3.12"
@@ -62,4 +62,10 @@ resource "aws_lambda_function" "app_lambda" {
   source_code_hash = filebase64sha256("${path.module}/../../../app/lambda/package/lambda.zip")
 
   timeout = 10
+
+  environment {
+    variables = {
+      TABLE_NAME = "ai-serverless-app-table-${var.environment}"
+    }
+  }
 }

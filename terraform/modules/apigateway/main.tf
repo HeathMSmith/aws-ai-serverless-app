@@ -1,5 +1,5 @@
 resource "aws_apigatewayv2_api" "http_api" {
-  name          = "ai-serverless-http-api"
+  name          = "ai-serverless-http-api-${var.environment}"
   protocol_type = "HTTP"
 }
 

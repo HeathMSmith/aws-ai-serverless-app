@@ -5,3 +5,8 @@ variable "lambda_invoke_arn" {
 variable "lambda_function_name" {
   type = string
 }
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+}
