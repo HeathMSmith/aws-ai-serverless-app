@@ -1,4 +1,4 @@
-name: Terraform Apply
+name: Terraform Apply(Controlled)
 
 on:
   workflow_dispatch:
