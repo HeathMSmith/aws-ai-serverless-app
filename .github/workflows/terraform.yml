@@ -36,6 +36,11 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Run tfsec (Terraform Security Scan)
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+            working_directory: terraform
+
       - name: Terraform Validate
         run: terraform validate
 
