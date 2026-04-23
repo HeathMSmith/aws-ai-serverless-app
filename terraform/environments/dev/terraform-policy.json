@@ -10,14 +10,27 @@
         "lambda:*",
         "apigateway:*",
         "logs:*",
+
         "iam:CreateRole",
         "iam:DeleteRole",
         "iam:GetRole",
+        "iam:ListRoles",
+
         "iam:PassRole",
+
         "iam:AttachRolePolicy",
         "iam:DetachRolePolicy",
+        "iam:ListAttachedRolePolicies",
+
         "iam:PutRolePolicy",
+        "iam:GetRolePolicy",
         "iam:DeleteRolePolicy",
+        "iam:ListRolePolicies",
+
+        "iam:GetPolicy",
+        "iam:ListPolicies",
+        "iam:GetPolicyVersion",
+
         "bedrock:InvokeModel"
       ],
       "Resource": "*"
