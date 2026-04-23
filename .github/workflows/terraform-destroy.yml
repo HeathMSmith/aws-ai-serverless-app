@@ -16,7 +16,7 @@ on:
 
 jobs:
   destroy:
-    if: github.event.inputs.confirm_destroy == 'destroy'
+    if: github.event.inputs.confirm == 'destroy'
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
 
