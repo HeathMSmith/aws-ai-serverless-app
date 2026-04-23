@@ -6,7 +6,10 @@ on:
       environment:
         description: "Environment to deploy (dev or prod)"
         required: true
-        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
 
 jobs:
   apply:
