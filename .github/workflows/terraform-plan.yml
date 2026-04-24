@@ -39,7 +39,7 @@ jobs:
 
       # Capture output properly
       - name: Terraform Plan
-        run: 
+        run: |
             echo "### Terraform Plan Summary" > plan.txt
             terraform plan -no-color | tee -a plan.txt
 
