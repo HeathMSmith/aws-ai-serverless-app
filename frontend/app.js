@@ -1,12 +1,21 @@
-const API_URL = "https://f1p9igzl60.execute-api.us-east-1.amazonaws.com";
+let API_URL = "";
+let configLoaded = false;
 
-let history = [];
-
-function toggleDarkMode() {
-  document.body.classList.toggle("dark");
+async function loadConfig() {
+  const response = await fetch("config.json");
+  const config = await response.json();
+  API_URL = config.api_url;
+  configLoaded = true;
 }
 
+loadConfig();
+
 async function sendRequest() {
+  if (!configLoaded) {
+    alert("App is still loading. Try again in a moment.");
+    return;
+  }
+
   const input = document.getElementById("input").value;
   const responseDiv = document.getElementById("response");
   const spinner = document.getElementById("spinner");
@@ -35,31 +44,10 @@ async function sendRequest() {
     responseDiv.innerText = output;
 
     addToHistory(input, output);
-
-    // Clear input after successful response
     document.getElementById("input").value = "";
 
   } catch (err) {
     spinner.style.display = "none";
     responseDiv.innerText = "Error: " + err.message;
   }
-}
-
-function copyResponse() {
-  const text = document.getElementById("response").innerText;
-  navigator.clipboard.writeText(text);
-}
-
-function addToHistory(input, output) {
-  history.unshift({ input, output });
-
-  const historyDiv = document.getElementById("history");
-  historyDiv.innerHTML = "<h3>History</h3>";
-
-  history.slice(0, 5).forEach(item => {
-    const div = document.createElement("div");
-    div.className = "history-item";
-    div.innerText = `Q: ${item.input}\nA: ${item.output}`;
-    historyDiv.appendChild(div);
-  });
 }

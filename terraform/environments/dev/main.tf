@@ -38,6 +38,8 @@ module "frontend" {
   source      = "../../modules/frontend"
   environment = var.environment
 
+  api_endpoint = module.apigateway.api_endpoint
+
   providers = {
     aws           = aws
     aws.us_east_1 = aws.us_east_1
