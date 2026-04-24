@@ -35,6 +35,14 @@ data "aws_iam_policy_document" "lambda_policy" {
 
     resources = ["*"]
   }
+    statement {
+        effect = "Allow"
+    
+        actions = [
+        "s3:PutObject"
+        ]
+        resources = ["arn:aws:s3:::${var.data_bucket_name}/*"]
+    }
 }
 
 resource "aws_iam_policy" "lambda_dynamodb_policy" {
@@ -66,6 +74,7 @@ resource "aws_lambda_function" "app_lambda" {
   environment {
     variables = {
       TABLE_NAME = "ai-serverless-app-table-${var.environment}"
+      DATA_BUCKET = var.data_bucket_name
     }
   }
 }

@@ -26,6 +26,7 @@ module "lambda" {
 
   dynamodb_table_arn = module.dynamodb.table_arn
   environment = var.environment
+  data_bucket_name = module.s3.bucket_name
 }
 
 module "apigateway" {
