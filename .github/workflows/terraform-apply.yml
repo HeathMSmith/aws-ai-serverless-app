@@ -1,4 +1,4 @@
-name: Terraform Apply(Controlled)
+name: Terraform Apply (Controlled)
 
 on:
   workflow_dispatch:
@@ -10,10 +10,13 @@ on:
         options:
           - dev
           - prod
+        default: dev
 
 jobs:
   apply:
     runs-on: ubuntu-latest
+
+    # Enables approval gates via GitHub Environments
     environment: ${{ github.event.inputs.environment }}
 
     permissions:
@@ -21,8 +24,8 @@ jobs:
       contents: read
 
     defaults:
-        run:
-            working-directory: terraform/environments/${{ github.event.inputs.environment }}
+      run:
+        working-directory: terraform/environments/${{ github.event.inputs.environment }}
 
     steps:
       - name: Checkout
@@ -40,18 +43,24 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Deterministic plan
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
+      # Apply EXACT plan
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
+      # CloudFront invalidation (already working for you)
       - name: Invalidate CloudFront Cache
         run: |
-            echo "Invalidating CloudFront for environment: ${{ github.event.inputs.environment }}"            
+          echo "Invalidating CloudFront for environment: ${{ github.event.inputs.environment }}"
 
-            DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
+          DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
 
-            aws cloudfront create-invalidation \
+          aws cloudfront create-invalidation \
             --distribution-id $DISTRIBUTION_ID \
             --paths "/index.html" "/app.js" "/assets/*"

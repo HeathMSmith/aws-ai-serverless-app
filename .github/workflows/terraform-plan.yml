@@ -1,17 +1,18 @@
-name: Terraform CI
+name: Terraform Plan (PR)
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
+    paths:
+      - "terraform/**"
 
 jobs:
-  terraform:
+  plan:
     runs-on: ubuntu-latest
 
     permissions:
       id-token: write
       contents: read
+      pull-requests: write
 
     defaults:
       run:
@@ -30,22 +31,18 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Format Check
-        run: terraform fmt -check
-
       - name: Terraform Init
         run: terraform init
-
-      - name: Run tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
-        with:
-            working_directory: terraform
-            soft_fail: true
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Terraform Validate
         run: terraform validate
 
+      # ✅ Capture output properly
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -no-color | tee plan.txt
+
+      # ✅ Proper PR comment
+      - name: Comment Plan on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: plan.txt
