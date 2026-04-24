@@ -24,6 +24,7 @@ module "dynamodb" {
 module "lambda" {
   source      = "../../modules/lambda"
   environment = var.environment
+  data_bucket_name = module.s3.bucket_name
 
   dynamodb_table_arn = module.dynamodb.table_arn
 }
