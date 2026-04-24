@@ -8,9 +8,12 @@ from datetime import datetime
 
 dynamodb = boto3.resource("dynamodb")
 bedrock = boto3.client("bedrock-runtime")
+s3 = boto3.client("s3")
 
 table_name = os.environ["TABLE_NAME"]
 table = dynamodb.Table(table_name)
+
+data_bucket = os.environ["DATA_BUCKET"]
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -90,6 +93,18 @@ def lambda_handler(event, context):
         }
 
         table.put_item(Item=item)
+        
+        # --- Store in S3 ---
+        object_key = f"requests/{timestamp}-{request_id}.json"
+
+        s3.put_object(
+            Bucket=data_bucket,
+            Key=object_key,
+            Body=json.dumps(item),
+            ContentType="application/json"
+        )
+
+        logger.info(f"Stored request in S3: {object_key}")
 
         return {
             "statusCode": 200,
