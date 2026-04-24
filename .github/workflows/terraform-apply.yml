@@ -45,3 +45,11 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
+
+      - name: Invalidate CloudFront Cache
+        run: |
+            DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
+
+            aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"

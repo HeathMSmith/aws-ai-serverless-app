@@ -1,6 +1,12 @@
 resource "aws_apigatewayv2_api" "http_api" {
   name          = "ai-serverless-http-api-${var.environment}"
   protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_origins = ["*"]
+    allow_methods = ["POST", "OPTIONS"]
+    allow_headers = ["content-type"]
+  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda_integration" {
