@@ -168,3 +168,11 @@ resource "aws_s3_object" "frontend_files" {
     "css"  = "text/css"
   }, split(".", each.value)[length(split(".", each.value)) - 1], "application/octet-stream")
 }
+
+resource "local_file" "frontend_config" {
+  content = jsonencode({
+    api_url = var.api_endpoint
+  })
+
+  filename = "../../../frontend/config.json"
+}
