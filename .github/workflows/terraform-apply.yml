@@ -48,8 +48,10 @@ jobs:
 
       - name: Invalidate CloudFront Cache
         run: |
+            echo "Invalidating CloudFront for environment: ${{ github.event.inputs.environment }}"            
+
             DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
 
             aws cloudfront create-invalidation \
             --distribution-id $DISTRIBUTION_ID \
-            --paths "/*"
+            --paths "/index.html" "/app.js" "/assets/*"
