@@ -4,7 +4,9 @@
 
 This project implements a production-style, serverless AI application on AWS using Terraform. It demonstrates secure frontend delivery, scalable backend processing, and cost-conscious design using fully managed services.
 
-The system accepts user input via a web interface, processes it using AWS Bedrock, stores results in DynamoDB, and returns a response to the user.
+The application accepts user input via a web interface, processes it using AWS Bedrock, stores results in DynamoDB, and returns a response to the user.
+
+This repository is structured to reflect real-world cloud engineering practices, including multi-environment deployments, CI/CD automation, and secure infrastructure design.
 
 ---
 
@@ -39,89 +41,34 @@ DynamoDB (Persistence)
 
 ---
 
-## Key Design Decisions
+## Key Design Decisions (The "Why")
 
-### 1. CloudFront + Origin Access Control (OAC)
-- S3 bucket is **not publicly accessible**
-- CloudFront acts as the only entry point
-- Enforces HTTPS and improves performance globally
+### CloudFront + OAC (Security + Performance)
+CloudFront enforces HTTPS, improves global latency, and ensures S3 remains private.
 
-### 2. Serverless Backend
-- API Gateway + Lambda eliminate idle compute cost
-- Automatically scales with demand
-- No infrastructure management required
+### Serverless Backend (Cost + Scalability)
+Lambda + API Gateway scale automatically and eliminate idle cost.
 
-### 3. DynamoDB (On-Demand)
-- No capacity planning required
-- Cost-efficient for low to moderate usage
-- Integrated with KMS for encryption
+### DynamoDB (On-Demand)
+Removes capacity planning and scales automatically.
 
-### 4. Bedrock Integration
-- Enables AI-driven response generation
-- Abstracts model hosting and scaling
-- Keeps architecture lightweight
+### Bedrock Integration
+Provides AI capabilities without managing models.
 
-### 5. Multi-Environment Design
-- Separate **dev** and **prod** environments
-- Environment-specific domains:
-  - `ai-dev.hmsdev.click`
-  - `ai.hmsdev.click`
-- Isolated resources per environment
+### Multi-Environment Architecture
+Separates dev and prod with isolated domains and resources.
 
-### 6. Infrastructure as Code (Terraform)
-- Fully reproducible deployments
-- Modular structure (frontend, backend, API)
-- Remote state with locking
+### Terraform
+Ensures reproducibility and modular infrastructure design.
 
-### 7. CI/CD with GitHub Actions (OIDC)
-- No long-lived AWS credentials
-- Secure role assumption via OpenID Connect
-- Automated:
-  - Terraform plan/apply
-  - CloudFront cache invalidation
-
-### 8. CloudFront Cache Invalidation
-- Triggered after each deployment
-- Ensures users always receive the latest frontend assets
-- Eliminates stale content issues
-
----
-
-## Repository Structure
-
-```
-terraform/
-  modules/
-    frontend/
-    lambda/
-    apigateway/
-    dynamodb/
-    s3/
-  environments/
-    dev/
-    prod/
-
-frontend/
-  index.html
-  app.js
-  assets/
-```
+### CI/CD with OIDC
+Removes need for static credentials and secures deployments.
 
 ---
 
 ## Deployment
 
-
-### Prerequisites
-
-- AWS account
-- Terraform installed
-- GitHub repository with Actions enabled
-
----
-> Note: Terraform plans are generated and applied as separate steps to ensure deterministic and reviewable infrastructure changes.
-
-### Deploy (Dev)
+### Dev
 
 ```
 cd terraform/environments/dev
@@ -131,9 +78,7 @@ terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
----
-
-### Deploy (Prod)
+### Prod
 
 ```
 cd terraform/environments/prod
@@ -145,76 +90,31 @@ terraform apply tfplan
 
 ---
 
-### Destroy (Cost Control)
+## Teardown
 
 ```
 terraform destroy
 ```
 
-Or via GitHub Actions:
-
-- Run **Terraform Destroy (Controlled)**
-- Provide:
-  - environment: `dev` or `prod`
-  - confirm: `destroy`
-
 ---
 
 ## Cost Considerations
 
-This project is designed to operate within AWS Free Tier or near-zero cost under light usage.
-
-| Service        | Cost Behavior |
-|----------------|--------------|
-| Lambda         | Pay per request |
-| API Gateway    | Low cost for small traffic |
-| DynamoDB       | On-demand billing |
-| CloudFront     | Free tier eligible |
-| S3             | Minimal storage cost |
-
-> Recommendation: Destroy environments when not in use.
+- Serverless = minimal cost
+- Destroy environments when not in use
 
 ---
 
 ## Security Considerations
 
-- S3 bucket is private (OAC enforced)
-- IAM roles follow least-privilege principles
-- No hardcoded credentials (OIDC used in CI/CD)
-- Data encrypted via AWS KMS
-- HTTPS enforced via CloudFront + ACM
-
----
-
-## Observability
-
-- CloudWatch Logs for Lambda execution
-- API Gateway metrics available
-- Structured logging implemented in Lambda
-
----
-
-## Future Improvements
-
-- User authentication (Amazon Cognito)
-- WAF integration for rate limiting and protection
-- Enhanced observability (CloudWatch dashboards)
-- Request history UI backed by DynamoDB
-- Cache-busting strategy for frontend assets
-
----
-
-## What This Project Demonstrates
-
-- Designing secure, scalable serverless architectures
-- Implementing multi-environment infrastructure with Terraform
-- Integrating AI services into cloud-native applications
-- Building CI/CD pipelines with GitHub Actions and OIDC
-- Managing cost through serverless and on-demand services
+- Private S3 (OAC)
+- IAM least privilege
+- HTTPS enforced
 
 ---
 
 ## Author
 
-Heath Smith  
-AWS Certified Solutions Architect – Associate
+Heath Smith
+
+Testing

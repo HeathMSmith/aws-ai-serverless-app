@@ -37,12 +37,16 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      # ✅ Capture output properly
+      # Capture output properly
       - name: Terraform Plan
-        run: terraform plan -no-color | tee plan.txt
+        run: |
+            echo "### Terraform Plan Summary" > plan.txt
+            terraform plan -no-color | tee -a plan.txt
 
-      # ✅ Proper PR comment
+      # Proper PR comment
       - name: Comment Plan on PR
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          path: plan.txt
+          path: terraform/environments/dev/plan.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
