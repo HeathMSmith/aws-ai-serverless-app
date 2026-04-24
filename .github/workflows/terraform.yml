@@ -36,12 +36,12 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Run tfsec (Terraform Security Scan)
+      - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
             working_directory: terraform
             soft_fail: true
-        env:    
+        env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Terraform Validate
