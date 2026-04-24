@@ -1,24 +1,62 @@
+// ================================
+// Runtime config
+// ================================
 let API_URL = "";
 let configLoaded = false;
 
 async function loadConfig() {
-  const response = await fetch("config.json");
-  const config = await response.json();
-  API_URL = config.api_url;
-  configLoaded = true;
+  try {
+    const res = await fetch("config.json");
+    const config = await res.json();
+    API_URL = config.api_url; // no /process here
+    configLoaded = true;
+
+    // enable button once ready (if you have one)
+    const btn = document.getElementById("sendBtn");
+    if (btn) btn.disabled = false;
+
+  } catch (err) {
+    console.error("Failed to load config:", err);
+    const responseDiv = document.getElementById("response");
+    if (responseDiv) {
+      responseDiv.innerText = "Failed to load app configuration.";
+    }
+  }
 }
 
-loadConfig();
+// Disable button until config loads
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("sendBtn");
+  if (btn) btn.disabled = true;
 
+  loadConfig();
+});
+
+
+// ================================
+// UI State
+// ================================
+let history = [];
+
+function toggleDarkMode() {
+  document.body.classList.toggle("dark");
+}
+
+
+// ================================
+// Main Request Handler
+// ================================
 async function sendRequest() {
   if (!configLoaded) {
     alert("App is still loading. Try again in a moment.");
     return;
   }
 
-  const input = document.getElementById("input").value;
+  const inputEl = document.getElementById("input");
   const responseDiv = document.getElementById("response");
   const spinner = document.getElementById("spinner");
+
+  const input = inputEl.value;
 
   if (!input.trim()) {
     responseDiv.innerText = "Please enter a prompt.";
@@ -44,10 +82,39 @@ async function sendRequest() {
     responseDiv.innerText = output;
 
     addToHistory(input, output);
-    document.getElementById("input").value = "";
+
+    // Clear input
+    inputEl.value = "";
 
   } catch (err) {
     spinner.style.display = "none";
     responseDiv.innerText = "Error: " + err.message;
   }
+}
+
+
+// ================================
+// Clipboard
+// ================================
+function copyResponse() {
+  const text = document.getElementById("response").innerText;
+  navigator.clipboard.writeText(text);
+}
+
+
+// ================================
+// History
+// ================================
+function addToHistory(input, output) {
+  history.unshift({ input, output });
+
+  const historyDiv = document.getElementById("history");
+  historyDiv.innerHTML = "<h3>History</h3>";
+
+  history.slice(0, 5).forEach(item => {
+    const div = document.createElement("div");
+    div.className = "history-item";
+    div.innerText = `Q: ${item.input}\nA: ${item.output}`;
+    historyDiv.appendChild(div);
+  });
 }
