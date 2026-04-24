@@ -152,9 +152,23 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
     suffix = "index.html"
   }
 }
+locals {
+  frontend_files = [
+    for f in fileset("../../../frontend", "**") :
+    f if f != "config.json"
+  ]
+}
+resource "local_file" "frontend_config" {
+  content = jsonencode({
+    api_url = var.api_endpoint
+  })
 
+  filename = "../../../frontend/config.json"
+}
 resource "aws_s3_object" "frontend_files" {
-  for_each = fileset("../../../frontend", "**")
+  for_each = {
+    for file in local.frontend_files : file => file
+  }
 
   bucket = aws_s3_bucket.frontend.id
   key    = each.value
@@ -165,14 +179,24 @@ resource "aws_s3_object" "frontend_files" {
   content_type = lookup({
     "html" = "text/html",
     "js"   = "application/javascript",
-    "css"  = "text/css"
-  }, split(".", each.value)[length(split(".", each.value)) - 1], "application/octet-stream")
+    "css"  = "text/css",
+    "png"  = "image/png",
+    "jpg"  = "image/jpeg",
+    "jpeg" = "image/jpeg",
+    "ico"  = "image/x-icon",
+    "json" = "application/json"
+  }, lower(element(split(".", each.value), length(split(".", each.value)) - 1)), "application/octet-stream")
 }
+resource "aws_s3_object" "frontend_config" {
+      bucket = aws_s3_bucket.frontend.id
+  key    = "config.json"
+  source = "../../../frontend/config.json"
 
-resource "local_file" "frontend_config" {
-  content = jsonencode({
-    api_url = var.api_endpoint
-  })
+  etag = null
 
-  filename = "../../../frontend/config.json"
+  content_type = "application/json"
+
+  depends_on = [
+    local_file.frontend_config
+  ]
 }
