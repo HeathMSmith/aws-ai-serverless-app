@@ -24,6 +24,21 @@ async function loadConfig() {
   }
 }
 
+async function streamResponse(text, element) {
+  element.innerText = "";
+  
+  const delay = 15; // speed (lower = faster)
+
+  for (let i = 0; i < text.length; i++) {
+    element.innerText += text[i];
+
+    // smooth scrolling
+    element.scrollTop = element.scrollHeight;
+
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+}
+
 // Disable button until config loads
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("sendBtn");
@@ -76,10 +91,10 @@ async function sendRequest() {
     });
 
     const data = await res.json();
-    spinner.style.display = "none";
 
     const output = data.response || JSON.stringify(data);
-    responseDiv.innerText = output;
+    await streamResponse(output, responseDiv);
+    spinner.style.display = "none";
 
     addToHistory(input, output);
 
@@ -87,7 +102,6 @@ async function sendRequest() {
     inputEl.value = "";
 
   } catch (err) {
-    spinner.style.display = "none";
     responseDiv.innerText = "Error: " + err.message;
   }
 }
