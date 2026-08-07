@@ -34,16 +34,20 @@ jobs:
       - name: Prepare Terraform Environment
         uses: ./.github/actions/terraform-setup
         with:
-          working-directory: terraform/environments/${{ github.event.inputs.environment }}
+          working-directory: terraform/environments/dev
           terraform-version: "1.15.3"
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-        
-      # Apply plan
+          
+      # Deterministic plan
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      # Apply EXACT plan
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
-      # CloudFront invalidation
+      # CloudFront invalidation (already working for you)
       - name: Invalidate CloudFront Cache
         run: |
           echo "Invalidating CloudFront for environment: ${{ github.event.inputs.environment }}"
