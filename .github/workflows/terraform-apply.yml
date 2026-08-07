@@ -31,30 +31,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Prepare Terraform Environment
+        uses: ./.github/actions/terraform-setup
         with:
-          role-to-assume: arn:aws:iam::291634988692:role/hms-github-actions-terraform-role
-          aws-region: us-east-1
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      # Deterministic plan
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
-      # Apply EXACT plan
+          working-directory: terraform/environments/${{ github.event.inputs.environment }}
+          terraform-version: "1.15.3"
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+        
+      # Apply plan
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
 
-      # CloudFront invalidation (already working for you)
+      # CloudFront invalidation
       - name: Invalidate CloudFront Cache
         run: |
           echo "Invalidating CloudFront for environment: ${{ github.event.inputs.environment }}"

@@ -39,17 +39,13 @@ jobs:
             exit 1
           fi
 
-      - name: Configure AWS Credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Prepare Terraform Environment
+        uses: ./.github/actions/terraform-setup
         with:
-          role-to-assume: arn:aws:iam::291634988692:role/hms-github-actions-terraform-role
-          aws-region: us-east-1
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init
-        run: terraform init
+          working-directory: terraform/environments/${{ github.event.inputs.environment }}
+          terraform-version: "1.15.3"
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve

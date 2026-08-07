@@ -26,13 +26,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Terraform Setup
+      - name: Prepare Terraform Environment
         uses: ./.github/actions/terraform-setup
         with:
           working-directory: terraform/environments/dev
           terraform-version: "1.15.3"
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          
       # Capture output properly
       - name: Terraform Plan
         run: |
