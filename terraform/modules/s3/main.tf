@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "app_bucket" {
-  bucket = "hms-ai-serverless-app-${var.environment}"
+  bucket = "hms-ai-serverless-app-${var.environment}${var.bucket_suffix}"
 
   force_destroy = true
   tags = {

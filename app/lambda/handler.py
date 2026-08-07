@@ -64,7 +64,7 @@ def lambda_handler(event, context):
         prompt = f"Respond clearly and concisely: {user_input}"
 
         response = bedrock.invoke_model(
-            modelId="anthropic.claude-3-haiku-20240307-v1:0",
+            modelId="global.anthropic.claude-haiku-4-5-20251001-v1:0",
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
                 "messages": [

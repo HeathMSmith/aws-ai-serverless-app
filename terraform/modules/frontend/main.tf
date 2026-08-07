@@ -1,9 +1,13 @@
 data "aws_route53_zone" "main" {
+  count = var.use_custom_domain ? 1 : 0
+
   name = "hmsdev.click"
 }
 
 resource "aws_route53_record" "frontend_alias" {
-  zone_id = data.aws_route53_zone.main.zone_id
+  count   = var.use_custom_domain ? 1 : 0
+
+  zone_id = data.aws_route53_zone.main[0].zone_id
   name    = local.frontend_domain
   type    = "A"
 
@@ -15,31 +19,36 @@ resource "aws_route53_record" "frontend_alias" {
 }
 
 resource "aws_acm_certificate" "frontend_cert" {
+  count = var.use_custom_domain ? 1 : 0
+  
   provider          = aws.us_east_1
   domain_name       = local.frontend_domain
   validation_method = "DNS"
 }
 
 resource "aws_route53_record" "cert_validation" {
-  for_each = {
-    for dvo in aws_acm_certificate.frontend_cert.domain_validation_options :
+  for_each = var.use_custom_domain ? {
+    for dvo in aws_acm_certificate.frontend_cert[0].domain_validation_options :
     dvo.domain_name => {
-      name  = dvo.resource_record_name
-      type  = dvo.resource_record_type
-      value = dvo.resource_record_value
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
     }
-  }
+  } : {}
 
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = each.value.name
-  type    = each.value.type
-  ttl     = 60
-  records = [each.value.value]
+  allow_overwrite = true
+  zone_id         = data.aws_route53_zone.main[0].zone_id
+  name            = each.value.name
+  type            = each.value.type
+  ttl             = 60
+  records         = [each.value.record]
 }
 
 resource "aws_acm_certificate_validation" "frontend_cert_validation" {
+  count = var.use_custom_domain ? 1 : 0
+  
   provider                = aws.us_east_1
-  certificate_arn         = aws_acm_certificate.frontend_cert.arn
+  certificate_arn         = aws_acm_certificate.frontend_cert[0].arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
@@ -48,7 +57,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "frontend" {
-  bucket = "hms-ai-frontend-${var.environment}"
+  bucket = "hms-ai-frontend-${var.environment}${var.bucket_suffix}"
 
   force_destroy = true
 }
@@ -64,7 +73,7 @@ resource "aws_cloudfront_origin_access_control" "oac" {
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
-  aliases = [local.frontend_domain]
+  aliases = var.use_custom_domain ? [local.frontend_domain] : []
 
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -97,9 +106,10 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   viewer_certificate {
-  acm_certificate_arn      = aws_acm_certificate.frontend_cert.arn
-  ssl_support_method       = "sni-only"
-  minimum_protocol_version = "TLSv1.2_2021"
+  acm_certificate_arn = var.use_custom_domain ? aws_acm_certificate.frontend_cert[0].arn : null
+  cloudfront_default_certificate = !var.use_custom_domain
+  ssl_support_method = var.use_custom_domain ? "sni-only" : null
+  minimum_protocol_version = var.use_custom_domain ? "TLSv1.2_2021" : "TLSv1"
 }
 
   custom_error_response {
@@ -155,7 +165,7 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
 locals {
   frontend_files = [
     for f in fileset("../../../frontend", "**") :
-    f if f != "config.json"
+    f if f != "config.json" && f != ".DS_Store"
   ]
 }
 resource "local_file" "frontend_config" {
