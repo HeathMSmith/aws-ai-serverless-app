@@ -14,6 +14,8 @@ module "iam" {
 module "s3" {
   source      = "../../modules/s3"
   environment = var.environment
+
+  bucket_suffix = "-portfolio"
 }
 
 module "dynamodb" {
@@ -22,8 +24,8 @@ module "dynamodb" {
 }
 
 module "lambda" {
-  source      = "../../modules/lambda"
-  environment = var.environment
+  source           = "../../modules/lambda"
+  environment      = var.environment
   data_bucket_name = module.s3.bucket_name
 
   dynamodb_table_arn = module.dynamodb.table_arn
@@ -36,10 +38,13 @@ module "apigateway" {
   lambda_function_name = module.lambda.function_name
 }
 module "frontend" {
-  source      = "../../modules/frontend"
-  environment = var.environment
+  source            = "../../modules/frontend"
+  environment       = var.environment
+  use_custom_domain = false
 
   api_endpoint = module.apigateway.api_endpoint
+
+  bucket_suffix = "-portfolio"
 
   providers = {
     aws           = aws
