@@ -1,0 +1,57 @@
+name: "Terraform Setup"
+description: "Prepares a GitHub Actions runner for Terraform operations using AWS OIDC authentication."
+
+author: "Heath Smith"
+
+branding:
+  icon: "package"
+  color: "orange"
+
+inputs:
+  working-directory:
+    description: "Terraform working directory."
+    required: true
+
+  terraform-version:
+    description: "Terraform version to install."
+    required: false
+    default: "1.15.3"
+
+  aws-region:
+    description: "AWS Region."
+    required: false
+    default: "us-east-1"
+
+  role-to-assume:
+    description: "IAM Role ARN to assume using GitHub OIDC."
+    required: true
+
+runs:
+  using: "composite"
+
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.role-to-assume }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+
+    - name: Terraform Init
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform init
+
+    - name: Terraform Format Check
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform fmt -check -recursive
+
+    - name: Terraform Validate
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: terraform validate
