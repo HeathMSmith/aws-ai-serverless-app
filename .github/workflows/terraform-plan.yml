@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "terraform/**"
+      - ".github/workflows/**"
+      - ".github/actions/**"
   
   workflow_dispatch:
 
@@ -24,29 +26,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Terraform Setup
+        uses: ./.github/actions/terraform-setup
         with:
-          role-to-assume: arn:aws:iam::291634988692:role/hms-github-actions-terraform-role
-          aws-region: us-east-1
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
+          working-directory: terraform/environments/dev
+          terraform-version: "1.15.3"
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
       # Capture output properly
       - name: Terraform Plan
         run: |
-            echo "### Terraform Plan Summary" > plan.txt
-            terraform plan -no-color | tee -a plan.txt
+          echo "### Terraform Plan Summary" > plan.txt
+          terraform plan -no-color | tee -a plan.txt
 
       # Proper PR comment
       - name: Comment Plan on PR
+        if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: terraform/environments/dev/plan.txt
