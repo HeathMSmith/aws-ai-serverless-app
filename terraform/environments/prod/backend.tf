@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "hms-tfstate-ai-serverless-app"
-    key            = "prod/terraform.tfstate"
+    bucket         = "hms-terraform-state-portfolio"
+    key            = "ai-serverlessapp/prod/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
+    dynamodb_table = "hms-terraform-locks"
     encrypt        = true
   }
 }
