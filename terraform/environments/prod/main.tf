@@ -14,6 +14,8 @@ module "iam" {
 module "s3" {
   source      = "../../modules/s3"
   environment = var.environment
+
+  bucket_suffix = "-portfolio"
 }
 
 module "dynamodb" {
@@ -42,6 +44,8 @@ module "frontend" {
   environment = var.environment
 
   api_endpoint = module.apigateway.api_endpoint
+
+  bucket_suffix = "-portfolio"
 
   providers = {
     aws           = aws
