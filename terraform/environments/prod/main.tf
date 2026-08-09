@@ -12,12 +12,12 @@ module "iam" {
 }
 
 module "s3" {
-  source = "../../modules/s3"
+  source      = "../../modules/s3"
   environment = var.environment
 }
 
 module "dynamodb" {
-  source = "../../modules/dynamodb"
+  source      = "../../modules/dynamodb"
   environment = var.environment
 }
 
@@ -25,8 +25,8 @@ module "lambda" {
   source = "../../modules/lambda"
 
   dynamodb_table_arn = module.dynamodb.table_arn
-  environment = var.environment
-  data_bucket_name = module.s3.bucket_name
+  environment        = var.environment
+  data_bucket_name   = module.s3.bucket_name
 }
 
 module "apigateway" {
@@ -34,7 +34,7 @@ module "apigateway" {
 
   lambda_invoke_arn    = module.lambda.invoke_arn
   lambda_function_name = module.lambda.function_name
-  environment = var.environment
+  environment          = var.environment
 }
 
 module "frontend" {
