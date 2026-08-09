@@ -1,4 +1,4 @@
-name: Terraform Plan (PR)
+name: Terraform Plan
 
 on:
   pull_request:
@@ -6,12 +6,22 @@ on:
       - "terraform/**"
       - ".github/workflows/**"
       - ".github/actions/**"
-  
+
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to plan (dev or prod)"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
 
 jobs:
   plan:
     runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request' && 'dev' || github.event.inputs.environment }}
 
     permissions:
       id-token: write
@@ -20,7 +30,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: terraform/environments/dev
+        working-directory: terraform/environments/${{ github.event_name == 'pull_request' && 'dev' || github.event.inputs.environment }}
 
     steps:
       - name: Checkout
@@ -29,11 +39,11 @@ jobs:
       - name: Prepare Terraform Environment
         uses: ./.github/actions/terraform-setup
         with:
-          working-directory: terraform/environments/dev
+          working-directory: terraform/environments/${{ github.event_name == 'pull_request' && 'dev' || github.event.inputs.environment }}
           terraform-version: "1.15.3"
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          
+
       # Capture output properly
       - name: Terraform Plan
         run: |
