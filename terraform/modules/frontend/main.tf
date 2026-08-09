@@ -5,7 +5,7 @@ data "aws_route53_zone" "main" {
 }
 
 resource "aws_route53_record" "frontend_alias" {
-  count   = var.use_custom_domain ? 1 : 0
+  count = var.use_custom_domain ? 1 : 0
 
   zone_id = data.aws_route53_zone.main[0].zone_id
   name    = local.frontend_domain
@@ -20,7 +20,7 @@ resource "aws_route53_record" "frontend_alias" {
 
 resource "aws_acm_certificate" "frontend_cert" {
   count = var.use_custom_domain ? 1 : 0
-  
+
   provider          = aws.us_east_1
   domain_name       = local.frontend_domain
   validation_method = "DNS"
@@ -46,7 +46,7 @@ resource "aws_route53_record" "cert_validation" {
 
 resource "aws_acm_certificate_validation" "frontend_cert_validation" {
   count = var.use_custom_domain ? 1 : 0
-  
+
   provider                = aws.us_east_1
   certificate_arn         = aws_acm_certificate.frontend_cert[0].arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
@@ -73,7 +73,7 @@ resource "aws_cloudfront_origin_access_control" "oac" {
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
-  aliases = var.use_custom_domain ? [local.frontend_domain] : []
+  aliases             = var.use_custom_domain ? [local.frontend_domain] : []
 
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
@@ -89,7 +89,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     cached_methods  = ["GET", "HEAD"]
 
     compress = true
-    
+
 
     forwarded_values {
       query_string = false
@@ -106,11 +106,11 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 
   viewer_certificate {
-  acm_certificate_arn = var.use_custom_domain ? aws_acm_certificate.frontend_cert[0].arn : null
-  cloudfront_default_certificate = !var.use_custom_domain
-  ssl_support_method = var.use_custom_domain ? "sni-only" : null
-  minimum_protocol_version = var.use_custom_domain ? "TLSv1.2_2021" : "TLSv1"
-}
+    acm_certificate_arn            = var.use_custom_domain ? aws_acm_certificate.frontend_cert[0].arn : null
+    cloudfront_default_certificate = !var.use_custom_domain
+    ssl_support_method             = var.use_custom_domain ? "sni-only" : null
+    minimum_protocol_version       = var.use_custom_domain ? "TLSv1.2_2021" : "TLSv1"
+  }
 
   custom_error_response {
     error_code         = 403
@@ -135,7 +135,7 @@ resource "aws_s3_bucket_policy" "cloudfront_access" {
       Principal = {
         Service = "cloudfront.amazonaws.com"
       }
-      Action = "s3:GetObject"
+      Action   = "s3:GetObject"
       Resource = "${aws_s3_bucket.frontend.arn}/*"
       Condition = {
         StringEquals = {
@@ -198,7 +198,7 @@ resource "aws_s3_object" "frontend_files" {
   }, lower(element(split(".", each.value), length(split(".", each.value)) - 1)), "application/octet-stream")
 }
 resource "aws_s3_object" "frontend_config" {
-      bucket = aws_s3_bucket.frontend.id
+  bucket = aws_s3_bucket.frontend.id
   key    = "config.json"
   source = "../../../frontend/config.json"
 

@@ -40,7 +40,7 @@ module "apigateway" {
 module "frontend" {
   source            = "../../modules/frontend"
   environment       = var.environment
-  use_custom_domain = false
+  use_custom_domain = true
 
   api_endpoint = module.apigateway.api_endpoint
 

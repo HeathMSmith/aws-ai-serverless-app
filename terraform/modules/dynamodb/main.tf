@@ -8,16 +8,16 @@ resource "aws_kms_key" "dynamodb" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid = "EnableRootPermissions"
+        Sid    = "EnableRootPermissions"
         Effect = "Allow"
         Principal = {
           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
         }
-        Action = "kms:*"
+        Action   = "kms:*"
         Resource = "*"
       },
       {
-        Sid = "AllowLambdaUseOfKey"
+        Sid    = "AllowLambdaUseOfKey"
         Effect = "Allow"
         Principal = {
           AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/lambda-ai-serverless-${var.environment}-role"
@@ -48,9 +48,9 @@ resource "aws_dynamodb_table" "app_table" {
   }
 
   server_side_encryption {
-  enabled = true
-  kms_key_arn = aws_kms_key.dynamodb.arn
-}
+    enabled     = true
+    kms_key_arn = aws_kms_key.dynamodb.arn
+  }
 
   tags = {
     Name        = "ai-serverless-app-table-${var.environment}"
