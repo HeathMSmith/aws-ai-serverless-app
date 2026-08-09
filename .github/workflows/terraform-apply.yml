@@ -34,11 +34,11 @@ jobs:
       - name: Prepare Terraform Environment
         uses: ./.github/actions/terraform-setup
         with:
-          working-directory: terraform/environments/dev
+          working-directory: terraform/environments/${{ github.event.inputs.environment }}
           terraform-version: "1.15.3"
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          
+
       # Deterministic plan
       - name: Terraform Plan
         run: terraform plan -out=tfplan
