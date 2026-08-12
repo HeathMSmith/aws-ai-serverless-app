@@ -1,14 +1,62 @@
+#########################################
 # Terraform
-.terraform/
+#########################################
+
+# Terraform working directories
+**/.terraform/**
+
+# Terraform state files
 *.tfstate
 *.tfstate.*
 
+# Terraform saved plan files
+*.tfplan
+*.plan
+tfplan
+tfplan.*
+
+# Terraform crash logs
+crash.log
+crash.*.log
+
+# Terraform override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+#########################################
+# Environment / Local Configuration
+#########################################
+
+.env
+.env.*
+
+# NOTE:
+# terraform.tfvars files are intentionally tracked in this repository.
+# They contain non-sensitive environment identifiers only.
+
+#########################################
 # Python
+#########################################
+
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# OS
+#########################################
+# OS / Editor
+#########################################
+
 .DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
 
+#########################################
 # Logs
+#########################################
+
 *.log
