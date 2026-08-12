@@ -21,6 +21,12 @@ CloudFront provides the public HTTPS entry point for the static frontend while t
 7. Lambda stores the interaction in DynamoDB.
 8. The generated response is returned through API Gateway to the frontend.
 
+## Application Preview
+
+![AWS AI Serverless Application Frontend](./docs/screenshots/aws-ai-serverless-frontend.png)
+
+The browser-based frontend submits prompts to the API Gateway HTTP API and displays responses generated through Amazon Bedrock.
+
 ## Key Design Decisions
 
 ### Serverless application architecture
@@ -294,12 +300,14 @@ Primary cost considerations include:
 
 The development environment is intentionally deployed on demand rather than kept running continuously.
 
-## Live Demo
+## Demo Endpoints
+
+When the corresponding environment is deployed:
 
 - **Production:** https://ai.hmsdev.click
 - **Development:** https://ai-dev.hmsdev.click
 
-> Infrastructure is deployed on demand and may be unavailable when an environment has been intentionally destroyed to control portfolio costs.
+> These are on-demand portfolio environments and may be intentionally offline when not in use to control AWS costs.
 
 ## Author
 
