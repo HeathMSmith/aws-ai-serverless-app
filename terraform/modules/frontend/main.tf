@@ -168,13 +168,6 @@ locals {
     f if f != "config.json" && f != ".DS_Store"
   ]
 }
-resource "local_file" "frontend_config" {
-  content = jsonencode({
-    api_url = var.api_endpoint
-  })
-
-  filename = "../../../frontend/config.json"
-}
 resource "aws_s3_object" "frontend_files" {
   for_each = {
     for file in local.frontend_files : file => file
@@ -200,13 +193,10 @@ resource "aws_s3_object" "frontend_files" {
 resource "aws_s3_object" "frontend_config" {
   bucket = aws_s3_bucket.frontend.id
   key    = "config.json"
-  source = "../../../frontend/config.json"
 
-  etag = null
+  content = jsonencode({
+    api_url = var.api_endpoint
+  })
 
   content_type = "application/json"
-
-  depends_on = [
-    local_file.frontend_config
-  ]
 }
