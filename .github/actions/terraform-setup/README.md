@@ -2,8 +2,6 @@
 
 ## Overview
 
-## Overview
-
 This composite action prepares a GitHub Actions runner to execute Terraform against AWS using GitHub OpenID Connect (OIDC) authentication.
 
 The action performs the common initialization and quality assurance steps required before executing Terraform operations, allowing workflows to focus only on infrastructure-specific tasks such as planning, applying, or destroying infrastructure.
