@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "terraform/**"
+      - "app/lambda/package/lambda.zip"
       - ".github/workflows/**"
       - ".github/actions/**"
 
