@@ -51,22 +51,68 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
 
       - name: Create Destroy Plan
-        run: terraform plan -destroy -out=terraform-destroy.tfplan
+        id: terraform_destroy_plan
+        run: terraform plan -destroy -no-color -out=terraform-destroy.tfplan
 
-      - name: Render Destroy Plan
-        run: terraform show -no-color terraform-destroy.tfplan | tee destroy-plan.txt
-
-      - name: Add Destroy Plan to Job Summary
+      - name: Add Terraform Destroy Plan Summary
+        if: always()
+        env:
+          SUMMARY_ENVIRONMENT: ${{ github.event.inputs.environment }}
+          SUMMARY_COMMIT: ${{ github.sha }}
+          SUMMARY_ACTOR: ${{ github.actor }}
+          SUMMARY_EVENT: ${{ github.event_name }}
+          SUMMARY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SUMMARY_RUN_ATTEMPT: ${{ github.run_attempt }}
+          PLAN_OUTCOME: ${{ steps.terraform_destroy_plan.outcome }}
         run: |
-          {
-            echo "## Terraform Destroy Plan"
-            echo
-            echo "**Environment:** ${{ github.event.inputs.environment }}"
-            echo
-            echo '```terraform'
-            cat destroy-plan.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          summary_file="${RUNNER_TEMP}/terraform-destroy-plan-summary.md"
+          formatter_status=0
+
+          if [ "${PLAN_OUTCOME}" = "success" ] && [ -f terraform-destroy.tfplan ]; then
+            set +e
+            set -o pipefail
+            terraform show -json terraform-destroy.tfplan \
+              | python3 "${GITHUB_WORKSPACE}/scripts/render_terraform_summary.py" \
+                  --operation plan \
+                  --environment "${SUMMARY_ENVIRONMENT}" \
+                  --commit "${SUMMARY_COMMIT}" \
+                  --actor "${SUMMARY_ACTOR}" \
+                  --event "${SUMMARY_EVENT}" \
+                  --run-url "${SUMMARY_RUN_URL}" \
+                  --run-attempt "${SUMMARY_RUN_ATTEMPT}" \
+                  --plan-outcome "${PLAN_OUTCOME}" \
+                  > "${summary_file}"
+            formatter_status=$?
+            set -e
+          else
+            set +e
+            python3 "${GITHUB_WORKSPACE}/scripts/render_terraform_summary.py" \
+              --operation plan \
+              --environment "${SUMMARY_ENVIRONMENT}" \
+              --commit "${SUMMARY_COMMIT}" \
+              --actor "${SUMMARY_ACTOR}" \
+              --event "${SUMMARY_EVENT}" \
+              --run-url "${SUMMARY_RUN_URL}" \
+              --run-attempt "${SUMMARY_RUN_ATTEMPT}" \
+              --plan-outcome "${PLAN_OUTCOME}" \
+              < /dev/null > "${summary_file}"
+            formatter_status=$?
+            set -e
+          fi
+
+          if [ "${formatter_status}" -ne 0 ]; then
+            echo "::warning::Unable to render the sanitized Terraform Destroy Plan summary; using a safe fallback."
+            {
+              echo "## Terraform Destroy Plan Summary"
+              echo
+              echo "- **Environment:** \`${SUMMARY_ENVIRONMENT}\`"
+              echo "- **Plan outcome:** ${PLAN_OUTCOME}"
+              echo
+              echo "Summary data is unavailable. Inspect the workflow logs for details."
+            } > "${summary_file}"
+          fi
+
+          cat "${summary_file}" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Upload Destroy Plan
         uses: actions/upload-artifact@v4
@@ -106,4 +152,82 @@ jobs:
           path: terraform/environments/${{ github.event.inputs.environment }}
 
       - name: Apply Reviewed Destroy Plan
-        run: terraform apply -auto-approve terraform-destroy.tfplan
+        id: terraform_destroy
+        run: |
+          set -o pipefail
+          terraform apply -no-color -auto-approve terraform-destroy.tfplan \
+            | tee "${RUNNER_TEMP}/terraform-destroy-output.txt"
+
+      - name: Add Terraform Destroy Summary
+        if: always()
+        env:
+          SUMMARY_ENVIRONMENT: ${{ github.event.inputs.environment }}
+          SUMMARY_COMMIT: ${{ github.sha }}
+          SUMMARY_ACTOR: ${{ github.actor }}
+          SUMMARY_EVENT: ${{ github.event_name }}
+          SUMMARY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SUMMARY_RUN_ATTEMPT: ${{ github.run_attempt }}
+          PLAN_OUTCOME: ${{ needs.destroy-plan.result }}
+          EXECUTION_OUTCOME: ${{ steps.terraform_destroy.outcome }}
+        run: |
+          summary_file="${RUNNER_TEMP}/terraform-destroy-summary.md"
+          formatter_status=0
+          execution_arguments=()
+
+          if [ -f "${RUNNER_TEMP}/terraform-destroy-output.txt" ]; then
+            execution_arguments=(
+              --execution-output
+              "${RUNNER_TEMP}/terraform-destroy-output.txt"
+            )
+          fi
+
+          if [ "${PLAN_OUTCOME}" = "success" ] && [ -f terraform-destroy.tfplan ]; then
+            set +e
+            set -o pipefail
+            terraform show -json terraform-destroy.tfplan \
+              | python3 "${GITHUB_WORKSPACE}/scripts/render_terraform_summary.py" \
+                  --operation destroy \
+                  --environment "${SUMMARY_ENVIRONMENT}" \
+                  --commit "${SUMMARY_COMMIT}" \
+                  --actor "${SUMMARY_ACTOR}" \
+                  --event "${SUMMARY_EVENT}" \
+                  --run-url "${SUMMARY_RUN_URL}" \
+                  --run-attempt "${SUMMARY_RUN_ATTEMPT}" \
+                  --plan-outcome "${PLAN_OUTCOME}" \
+                  --execution-outcome "${EXECUTION_OUTCOME}" \
+                  "${execution_arguments[@]}" \
+                  > "${summary_file}"
+            formatter_status=$?
+            set -e
+          else
+            set +e
+            python3 "${GITHUB_WORKSPACE}/scripts/render_terraform_summary.py" \
+              --operation destroy \
+              --environment "${SUMMARY_ENVIRONMENT}" \
+              --commit "${SUMMARY_COMMIT}" \
+              --actor "${SUMMARY_ACTOR}" \
+              --event "${SUMMARY_EVENT}" \
+              --run-url "${SUMMARY_RUN_URL}" \
+              --run-attempt "${SUMMARY_RUN_ATTEMPT}" \
+              --plan-outcome "${PLAN_OUTCOME}" \
+              --execution-outcome "${EXECUTION_OUTCOME}" \
+              "${execution_arguments[@]}" \
+              < /dev/null > "${summary_file}"
+            formatter_status=$?
+            set -e
+          fi
+
+          if [ "${formatter_status}" -ne 0 ]; then
+            echo "::warning::Unable to render the sanitized Terraform Destroy summary; using a safe fallback."
+            {
+              echo "## Terraform Destroy Summary"
+              echo
+              echo "- **Environment:** \`${SUMMARY_ENVIRONMENT}\`"
+              echo "- **Plan outcome:** ${PLAN_OUTCOME}"
+              echo "- **Destroy outcome:** ${EXECUTION_OUTCOME}"
+              echo
+              echo "Summary data is unavailable. Inspect the workflow logs for details."
+            } > "${summary_file}"
+          fi
+
+          cat "${summary_file}" >> "${GITHUB_STEP_SUMMARY}"
