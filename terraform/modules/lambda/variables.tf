@@ -10,3 +10,14 @@ variable "data_bucket_name" {
   description = "S3 bucket for storing request data"
   type        = string
 }
+
+variable "reserved_concurrency" {
+  description = "Reserved concurrent executions for the Lambda function"
+  type        = number
+  default     = 2
+
+  validation {
+    condition     = var.reserved_concurrency > 0 && floor(var.reserved_concurrency) == var.reserved_concurrency
+    error_message = "Reserved concurrency must be a positive whole number."
+  }
+}
