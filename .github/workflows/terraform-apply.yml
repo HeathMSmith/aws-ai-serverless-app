@@ -41,19 +41,103 @@ jobs:
 
       # Deterministic plan
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        id: terraform_plan
+        run: terraform plan -no-color -out=tfplan
 
       # Apply EXACT plan
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        id: terraform_apply
+        run: |
+          set -o pipefail
+          terraform apply -no-color -auto-approve tfplan \
+            | tee "${RUNNER_TEMP}/terraform-apply-output.txt"
 
       # CloudFront invalidation (already working for you)
       - name: Invalidate CloudFront Cache
+        id: cloudfront_invalidation
         run: |
           echo "Invalidating CloudFront for environment: ${{ github.event.inputs.environment }}"
 
           DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
 
           aws cloudfront create-invalidation \
-            --distribution-id $DISTRIBUTION_ID \
+            --distribution-id "${DISTRIBUTION_ID}" \
             --paths "/index.html" "/app.js" "/assets/*"
+
+      - name: Add Terraform Apply Summary
+        if: always()
+        env:
+          SUMMARY_ENVIRONMENT: ${{ github.event.inputs.environment }}
+          SUMMARY_COMMIT: ${{ github.sha }}
+          SUMMARY_ACTOR: ${{ github.actor }}
+          SUMMARY_EVENT: ${{ github.event_name }}
+          SUMMARY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SUMMARY_RUN_ATTEMPT: ${{ github.run_attempt }}
+          PLAN_OUTCOME: ${{ steps.terraform_plan.outcome }}
+          EXECUTION_OUTCOME: ${{ steps.terraform_apply.outcome }}
+          INVALIDATION_OUTCOME: ${{ steps.cloudfront_invalidation.outcome }}
+        run: |
+          summary_file="${RUNNER_TEMP}/terraform-apply-summary.md"
+          formatter_status=0
+          execution_arguments=()
+
+          if [ -f "${RUNNER_TEMP}/terraform-apply-output.txt" ]; then
+            execution_arguments=(
+              --execution-output
+              "${RUNNER_TEMP}/terraform-apply-output.txt"
+            )
+          fi
+
+          if [ "${PLAN_OUTCOME}" = "success" ] && [ -f tfplan ]; then
+            set +e
+            set -o pipefail
+            terraform show -json tfplan \
+              | python3 "${GITHUB_WORKSPACE}/scripts/render_terraform_summary.py" \
+                  --operation apply \
+                  --environment "${SUMMARY_ENVIRONMENT}" \
+                  --commit "${SUMMARY_COMMIT}" \
+                  --actor "${SUMMARY_ACTOR}" \
+                  --event "${SUMMARY_EVENT}" \
+                  --run-url "${SUMMARY_RUN_URL}" \
+                  --run-attempt "${SUMMARY_RUN_ATTEMPT}" \
+                  --plan-outcome "${PLAN_OUTCOME}" \
+                  --execution-outcome "${EXECUTION_OUTCOME}" \
+                  --cloudfront-invalidation-outcome "${INVALIDATION_OUTCOME}" \
+                  "${execution_arguments[@]}" \
+                  > "${summary_file}"
+            formatter_status=$?
+            set -e
+          else
+            set +e
+            python3 "${GITHUB_WORKSPACE}/scripts/render_terraform_summary.py" \
+              --operation apply \
+              --environment "${SUMMARY_ENVIRONMENT}" \
+              --commit "${SUMMARY_COMMIT}" \
+              --actor "${SUMMARY_ACTOR}" \
+              --event "${SUMMARY_EVENT}" \
+              --run-url "${SUMMARY_RUN_URL}" \
+              --run-attempt "${SUMMARY_RUN_ATTEMPT}" \
+              --plan-outcome "${PLAN_OUTCOME}" \
+              --execution-outcome "${EXECUTION_OUTCOME}" \
+              --cloudfront-invalidation-outcome "${INVALIDATION_OUTCOME}" \
+              "${execution_arguments[@]}" \
+              < /dev/null > "${summary_file}"
+            formatter_status=$?
+            set -e
+          fi
+
+          if [ "${formatter_status}" -ne 0 ]; then
+            echo "::warning::Unable to render the sanitized Terraform Apply summary; using a safe fallback."
+            {
+              echo "## Terraform Apply Summary"
+              echo
+              echo "- **Environment:** \`${SUMMARY_ENVIRONMENT}\`"
+              echo "- **Plan outcome:** ${PLAN_OUTCOME}"
+              echo "- **Apply outcome:** ${EXECUTION_OUTCOME}"
+              echo "- **CloudFront invalidation outcome:** ${INVALIDATION_OUTCOME}"
+              echo
+              echo "Summary data is unavailable. Inspect the workflow logs for details."
+            } > "${summary_file}"
+          fi
+
+          cat "${summary_file}" >> "${GITHUB_STEP_SUMMARY}"

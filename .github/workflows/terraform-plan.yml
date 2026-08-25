@@ -45,15 +45,72 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
 
-      # Capture output properly
       - name: Terraform Plan
-        run: |
-          echo "### Terraform Plan Summary" > plan.txt
-          terraform plan -no-color | tee -a plan.txt
+        id: terraform_plan
+        run: terraform plan -no-color -out=tfplan
 
-      # Proper PR comment
+      - name: Add Terraform Plan Summary
+        if: always()
+        env:
+          SUMMARY_ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'dev' || github.event.inputs.environment }}
+          SUMMARY_COMMIT: ${{ github.sha }}
+          SUMMARY_ACTOR: ${{ github.actor }}
+          SUMMARY_EVENT: ${{ github.event_name }}
+          SUMMARY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SUMMARY_RUN_ATTEMPT: ${{ github.run_attempt }}
+          PLAN_OUTCOME: ${{ steps.terraform_plan.outcome }}
+        run: |
+          summary_file="plan.txt"
+          formatter_status=0
+
+          if [ "${PLAN_OUTCOME}" = "success" ] && [ -f tfplan ]; then
+            set +e
+            set -o pipefail
+            terraform show -json tfplan \
+              | python3 "${GITHUB_WORKSPACE}/scripts/render_terraform_summary.py" \
+                  --operation plan \
+                  --environment "${SUMMARY_ENVIRONMENT}" \
+                  --commit "${SUMMARY_COMMIT}" \
+                  --actor "${SUMMARY_ACTOR}" \
+                  --event "${SUMMARY_EVENT}" \
+                  --run-url "${SUMMARY_RUN_URL}" \
+                  --run-attempt "${SUMMARY_RUN_ATTEMPT}" \
+                  --plan-outcome "${PLAN_OUTCOME}" \
+                  > "${summary_file}"
+            formatter_status=$?
+            set -e
+          else
+            set +e
+            python3 "${GITHUB_WORKSPACE}/scripts/render_terraform_summary.py" \
+              --operation plan \
+              --environment "${SUMMARY_ENVIRONMENT}" \
+              --commit "${SUMMARY_COMMIT}" \
+              --actor "${SUMMARY_ACTOR}" \
+              --event "${SUMMARY_EVENT}" \
+              --run-url "${SUMMARY_RUN_URL}" \
+              --run-attempt "${SUMMARY_RUN_ATTEMPT}" \
+              --plan-outcome "${PLAN_OUTCOME}" \
+              < /dev/null > "${summary_file}"
+            formatter_status=$?
+            set -e
+          fi
+
+          if [ "${formatter_status}" -ne 0 ]; then
+            echo "::warning::Unable to render the sanitized Terraform Plan summary; using a safe fallback."
+            {
+              echo "## Terraform Plan Summary"
+              echo
+              echo "- **Environment:** \`${SUMMARY_ENVIRONMENT}\`"
+              echo "- **Plan outcome:** ${PLAN_OUTCOME}"
+              echo
+              echo "Summary data is unavailable. Inspect the workflow logs for details."
+            } > "${summary_file}"
+          fi
+
+          cat "${summary_file}" >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Comment Plan on PR
-        if: github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: terraform/environments/dev/plan.txt
