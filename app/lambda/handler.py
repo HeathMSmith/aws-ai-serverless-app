@@ -3,7 +3,7 @@ import uuid
 import boto3
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 dynamodb = boto3.resource("dynamodb")
 bedrock = boto3.client("bedrock-runtime")
@@ -55,7 +55,7 @@ def lambda_handler(event, context):
             }
 
         request_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow().isoformat() + "Z"
+        timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         logger.info(f"Processing request_id={request_id}")
 

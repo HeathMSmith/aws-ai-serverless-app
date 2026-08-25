@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -113,8 +114,8 @@ class LambdaHandlerTests(unittest.TestCase):
     def test_dictionary_body_completes_request_and_persists_result(self):
         self.configure_successful_bedrock_response()
         fixed_datetime = MagicMock(name="datetime")
-        fixed_datetime.utcnow.return_value.isoformat.return_value = (
-            "2026-08-24T12:34:56"
+        fixed_datetime.now.return_value = datetime(
+            2026, 8, 24, 12, 34, 56, tzinfo=timezone.utc
         )
 
         with (
@@ -133,13 +134,16 @@ class LambdaHandlerTests(unittest.TestCase):
             "status": "COMPLETED",
         }
         self.assertEqual(response["statusCode"], 200)
+        response_body = json.loads(response["body"])
         self.assertEqual(
-            json.loads(response["body"]),
+            response_body,
             {
                 "request_id": "fixed-request-id",
                 "response": "Generated answer",
             },
         )
+        self.assertNotIn("timestamp", response_body)
+        fixed_datetime.now.assert_called_once_with(self.handler.timezone.utc)
 
         self.bedrock.invoke_model.assert_called_once()
         bedrock_call = self.bedrock.invoke_model.call_args
