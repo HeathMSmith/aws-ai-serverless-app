@@ -118,9 +118,17 @@ Run `terraform validate` only when the affected environment is already initializ
 
 ## Generated artifacts
 
-Treat `app/lambda/package/lambda.zip` as generated output, not source code.
+`app/lambda/handler.py` is the Lambda source file. `app/lambda/package/lambda.zip` is the tracked deployment artifact consumed by Terraform, and the source and archive must be reviewed and committed together.
 
-Do not edit or regenerate it during ordinary source changes. If a task requires updating it, first explain the proposed reproducible packaging process and obtain approval.
+Verify that the archive is canonical and synchronized without writing to it:
+
+`python3 scripts/package_lambda.py check`
+
+Regenerating or replacing the archive still requires explicit approval. After approval, build it reproducibly with:
+
+`python3 scripts/package_lambda.py build`
+
+Never assemble or edit the ZIP manually.
 
 ## Verification
 

@@ -219,6 +219,22 @@ The project incorporates several controls intended to demonstrate practical AWS 
 └── README.md
 ```
 
+## Lambda packaging
+
+Terraform deploys the tracked Lambda archive rather than packaging `handler.py` automatically. Keep the source and archive synchronized so local tests exercise the same code that Terraform deploys. Review and commit `handler.py` and `lambda.zip` together.
+
+Verify the archive without modifying it:
+
+```bash
+python3 scripts/package_lambda.py check
+```
+
+Regenerating `app/lambda/package/lambda.zip` requires explicit approval. After approval, build the deterministic archive with:
+
+```bash
+python3 scripts/package_lambda.py build
+```
+
 ## Deployment
 
 GitHub Actions is the preferred deployment path because it exercises the same OIDC authentication and controlled Terraform lifecycle used for repository changes.
