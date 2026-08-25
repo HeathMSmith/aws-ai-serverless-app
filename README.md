@@ -43,6 +43,10 @@ The frontend bucket is not exposed as a public website. CloudFront accesses the 
 
 The backend is exposed through an API Gateway HTTP API rather than directly exposing the Lambda function. This provides a managed application endpoint and cleanly separates the browser-facing API layer from backend compute.
 
+### API rate and concurrency guardrails
+
+The API remains publicly accessible, but its default route is limited to 1 request per second with a burst limit of 2 requests. Lambda reserved concurrency is limited to 2 concurrent executions. These controls have no fixed additional service charge and reduce burst traffic and concurrent execution exposure, but they are best-effort throttling guardrails rather than authentication or a hard spending cap.
+
 ### Amazon Bedrock
 
 Amazon Bedrock provides managed access to foundation models without requiring model hosting or inference infrastructure. Lambda invokes the configured model and handles the application-specific request and response processing.

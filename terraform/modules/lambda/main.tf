@@ -61,10 +61,11 @@ resource "aws_iam_role_policy_attachment" "lambda_dynamodb_attach" {
 }
 
 resource "aws_lambda_function" "app_lambda" {
-  function_name = "ai-serverless-app-${var.environment}-lambda"
-  role          = aws_iam_role.lambda_role.arn
-  handler       = "handler.lambda_handler"
-  runtime       = "python3.12"
+  function_name                  = "ai-serverless-app-${var.environment}-lambda"
+  role                           = aws_iam_role.lambda_role.arn
+  handler                        = "handler.lambda_handler"
+  runtime                        = "python3.12"
+  reserved_concurrent_executions = var.reserved_concurrency
 
   filename         = "${path.module}/../../../app/lambda/package/lambda.zip"
   source_code_hash = filebase64sha256("${path.module}/../../../app/lambda/package/lambda.zip")
