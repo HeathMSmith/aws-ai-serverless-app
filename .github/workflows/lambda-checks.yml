@@ -2,12 +2,8 @@ name: Lambda Checks
 
 on:
   pull_request:
-    paths:
-      - "app/lambda/**"
-      - "scripts/package_lambda.py"
-      - "tests/**"
-      - "terraform/modules/lambda/**"
-      - ".github/workflows/lambda-checks.yml"
+    branches:
+      - main
   push:
     branches:
       - main
@@ -23,6 +19,7 @@ permissions:
 
 jobs:
   test:
+    name: PR Gate
     runs-on: ubuntu-latest
 
     steps:
