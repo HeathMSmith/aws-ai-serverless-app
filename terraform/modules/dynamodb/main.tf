@@ -15,20 +15,6 @@ resource "aws_kms_key" "dynamodb" {
         }
         Action   = "kms:*"
         Resource = "*"
-      },
-      {
-        Sid    = "AllowLambdaUseOfKey"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/lambda-ai-serverless-${var.environment}-role"
-        }
-        Action = [
-          "kms:Decrypt",
-          "kms:Encrypt",
-          "kms:GenerateDataKey",
-          "kms:DescribeKey"
-        ]
-        Resource = "*"
       }
     ]
   })
