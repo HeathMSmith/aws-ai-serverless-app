@@ -135,6 +135,12 @@ No long-lived AWS access keys are stored in GitHub for Terraform deployment.
 
 A reusable composite action standardizes Terraform setup, AWS authentication, initialization, formatting checks, and validation.
 
+### Pull request validation
+
+The `main` branch is protected, so changes are delivered through pull requests and all review conversations must be resolved before merging. `Lambda Checks / PR Gate` runs on every pull request targeting `main`. It runs the Python unit tests and verifies that the Lambda ZIP is canonical and synchronized with its source, without using AWS credentials or running Terraform.
+
+Terraform Plan remains path-specific and runs only for relevant Terraform, workflow, reusable-action, or deployable Lambda ZIP changes. It produces a plan for review but does not apply or deploy infrastructure; apply and destroy remain separately controlled manual workflows.
+
 ### Pull request plan
 
 Infrastructure changes are reviewed through the pull request workflow:
