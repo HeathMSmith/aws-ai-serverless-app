@@ -2,6 +2,11 @@ variable "dynamodb_table_arn" {
   type = string
 }
 
+variable "dynamodb_kms_key_arn" {
+  description = "ARN of the KMS key used to encrypt the DynamoDB table"
+  type        = string
+}
+
 variable "environment" {
   description = "Environment name"
   type        = string
