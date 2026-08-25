@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 resource "aws_iam_role" "lambda_role" {
   name = "lambda-ai-serverless-${var.environment}-role"
 
@@ -24,6 +26,27 @@ data "aws_iam_policy_document" "lambda_policy" {
     ]
 
     resources = [var.dynamodb_table_arn]
+  }
+
+  statement {
+    sid    = "AllowDynamoDBKMSUse"
+    effect = "Allow"
+
+    actions = [
+      "kms:Decrypt",
+      "kms:Encrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey"
+    ]
+
+    resources = [var.dynamodb_kms_key_arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["dynamodb.${data.aws_region.current.region}.amazonaws.com"]
+    }
   }
 
   statement {

@@ -26,9 +26,10 @@ module "dynamodb" {
 module "lambda" {
   source = "../../modules/lambda"
 
-  dynamodb_table_arn = module.dynamodb.table_arn
-  environment        = var.environment
-  data_bucket_name   = module.s3.bucket_name
+  dynamodb_kms_key_arn = module.dynamodb.kms_key_arn
+  dynamodb_table_arn   = module.dynamodb.table_arn
+  environment          = var.environment
+  data_bucket_name     = module.s3.bucket_name
 }
 
 module "apigateway" {
