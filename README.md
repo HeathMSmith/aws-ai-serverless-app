@@ -137,7 +137,7 @@ A reusable composite action standardizes Terraform setup, AWS authentication, in
 
 ### Pull request validation
 
-The `main` branch is protected, so changes are delivered through pull requests and all review conversations must be resolved before merging. `Lambda Checks / PR Gate` runs on every pull request targeting `main`. It runs the Python unit tests and verifies that the Lambda ZIP is canonical and synchronized with its source, without using AWS credentials or running Terraform.
+The `main` branch is protected, so changes are delivered through pull requests and all review conversations must be resolved before merging. `Lambda Checks / PR Gate` is the required status check and runs on every pull request targeting `main`. It runs the Python unit tests and verifies that the Lambda ZIP is canonical and synchronized with its source, without using AWS credentials or running Terraform.
 
 Terraform Plan remains path-specific and runs only for relevant Terraform, workflow, reusable-action, or deployable Lambda ZIP changes. It produces a plan for review but does not apply or deploy infrastructure; apply and destroy remain separately controlled manual workflows.
 
