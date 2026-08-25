@@ -3,7 +3,6 @@ import uuid
 import boto3
 import logging
 import os
-import traceback
 from datetime import datetime
 
 dynamodb = boto3.resource("dynamodb")
@@ -114,13 +113,12 @@ def lambda_handler(event, context):
             })
         }
 
-    except Exception as e:
-        logger.error(f"Error processing request: {str(e)}")
-        logger.error(traceback.format_exc())
+    except Exception:
+        logger.exception("Error processing request")
 
         return {
             "statusCode": 500,
             "body": json.dumps({
-                "error": str(e)
+                "error": "Internal server error"
             })
         }
