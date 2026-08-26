@@ -12,8 +12,28 @@ on:
           - prod
         default: dev
 
+concurrency:
+  group: terraform-deployment-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
 jobs:
+  branch-guard:
+    name: Require Main Branch
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - name: Validate Workflow Ref
+        env:
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          if [ "${WORKFLOW_REF}" != "refs/heads/main" ]; then
+            echo "::error::Terraform Apply may run only from refs/heads/main; received ${WORKFLOW_REF}."
+            exit 1
+          fi
+
   apply:
+    needs: branch-guard
     runs-on: ubuntu-latest
 
     # Enables approval gates via GitHub Environments
