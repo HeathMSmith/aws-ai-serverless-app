@@ -137,6 +137,8 @@ hms-github-actions-terraform-role
 
 No long-lived AWS access keys are stored in GitHub for Terraform deployment.
 
+The shared OIDC role and its attached managed policies are bootstrapped outside this repository. `terraform/environments/dev/terraform-policy.json` is a reference documenting the permissions this application expects; Terraform and the workflows do not create or attach it. The external `HMS-Terraform-ApplicationPolicyVersioning` policy grants only `iam:CreatePolicyVersion` and `iam:DeletePolicyVersion` for `lambda-dynamodb-write-policy-dev` and `lambda-dynamodb-write-policy-prod`. It does not grant `iam:SetDefaultPolicyVersion` or policy-version management over `HMS-Terraform-Core`, `HMS-Terraform-Infrastructure`, or `HMS-Terraform-ApplicationPolicyVersioning`.
+
 A reusable composite action standardizes Terraform setup, AWS authentication, initialization, formatting checks, and validation.
 
 ### Pull request validation
