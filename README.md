@@ -2,13 +2,13 @@
 
 A production-style serverless AI application built on AWS and provisioned with Terraform. The project demonstrates secure static frontend delivery, a managed serverless API, generative AI integration with Amazon Bedrock, encrypted persistence in DynamoDB, multi-environment infrastructure, and controlled CI/CD through GitHub Actions and AWS OIDC.
 
-The application accepts a prompt from a browser-based frontend, sends it through an API Gateway HTTP API to AWS Lambda, invokes an Amazon Bedrock foundation model, persists the interaction in DynamoDB, and returns the generated response to the user.
+The application accepts a prompt from a browser-based frontend, sends it through an API Gateway HTTP API to AWS Lambda, invokes an Amazon Bedrock foundation model, persists the completed interaction in DynamoDB, archives the same record as JSON in S3, and returns the generated response to the user.
 
 ## Architecture
 
 ![AWS AI Serverless Application Architecture](./docs/architecture/aws-ai-serverless-architecture.png)
 
-CloudFront provides the public HTTPS entry point for the static frontend while the S3 origin remains private through Origin Access Control (OAC). The browser calls an API Gateway HTTP API, which invokes a Python 3.12 Lambda function. Lambda orchestrates the Bedrock model invocation and persists application data in a DynamoDB table encrypted with a customer-managed AWS KMS key.
+CloudFront provides the public HTTPS entry point for the static frontend while the S3 origin remains private through Origin Access Control (OAC). The browser calls an API Gateway HTTP API, which invokes a Python 3.12 Lambda function. Lambda orchestrates the Bedrock model invocation, writes the completed record to a DynamoDB table encrypted with a customer-managed AWS KMS key, and archives the same record in a separate application-data S3 bucket.
 
 ## Request Flow
 
@@ -18,8 +18,9 @@ CloudFront provides the public HTTPS entry point for the static frontend while t
 4. The user submits a prompt to the API Gateway HTTP API.
 5. API Gateway invokes the Lambda backend.
 6. Lambda sends the prompt to Amazon Bedrock.
-7. Lambda stores the interaction in DynamoDB.
-8. The generated response is returned through API Gateway to the frontend.
+7. Lambda writes the completed interaction to DynamoDB.
+8. Lambda archives the same completed record as JSON in S3.
+9. The generated response is returned through API Gateway to the frontend.
 
 ## Application Preview
 
@@ -54,6 +55,10 @@ Amazon Bedrock provides managed access to foundation models without requiring mo
 ### DynamoDB with customer-managed KMS encryption
 
 Application data is stored in DynamoDB using on-demand billing. The table is encrypted with a customer-managed AWS KMS key, demonstrating explicit control of encryption at rest rather than relying solely on service-default encryption.
+
+### Encrypted, versioned S3 archive
+
+After writing a completed interaction to DynamoDB, Lambda archives the same record as a JSON object under `requests/<timestamp>-<request_id>.json` in a separate private application-data S3 bucket. Public access is blocked, default SSE-S3 (`AES256`) encryption is enabled, and S3 Versioning is enabled for the archive bucket.
 
 ### Runtime frontend configuration
 
