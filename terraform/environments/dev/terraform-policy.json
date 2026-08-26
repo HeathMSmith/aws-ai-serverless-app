@@ -51,6 +51,18 @@
         "bedrock:InvokeModel"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "TerraformApplicationPolicyVersioning",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreatePolicyVersion",
+        "iam:DeletePolicyVersion"
+      ],
+      "Resource": [
+        "arn:aws:iam::291634988692:policy/lambda-dynamodb-write-policy-dev",
+        "arn:aws:iam::291634988692:policy/lambda-dynamodb-write-policy-prod"
+      ]
     }
   ]
 }
