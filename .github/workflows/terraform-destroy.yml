@@ -15,13 +15,33 @@ on:
         description: "Type 'destroy' to confirm"
         required: true
 
+concurrency:
+  group: terraform-deployment-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
 permissions:
   id-token: write
   contents: read
 
 jobs:
+  branch-guard:
+    name: Require Main Branch
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - name: Validate Workflow Ref
+        env:
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          if [ "${WORKFLOW_REF}" != "refs/heads/main" ]; then
+            echo "::error::Terraform Destroy may run only from refs/heads/main; received ${WORKFLOW_REF}."
+            exit 1
+          fi
+
   destroy-plan:
     name: Destroy Plan
+    needs: branch-guard
     if: github.event.inputs.confirm == 'destroy'
     runs-on: ubuntu-latest
 
